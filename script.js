@@ -4,27 +4,38 @@ const REPO_NAME = "math-thing";
 const REPO = `${REPO_OWNER}/${REPO_NAME}`;
 const input = document.getElementById('ans');
 const eqnDisplay = document.getElementById('eqn');
+// --- GITHUB CONFIG ---; 
+const FILE = "highscore.txt";
+// ---------------------
+const timerBar = document.getElementById('timer-bar');
 
-let target, combo = 0, timeLeft = 100, gameActive = true;
+let target, combo = 0, timeLeft = 100, gameActive = false;
 let worldRecord = 0, fileSHA = "";
 
-// Fetch Global Score from highscore.txt via GitHub API
+// Sync with GitHub on Boot
 async function syncGlobalScore() {
-    const res = await fetch(`https://api.github.com/repos/${REPO}/contents/highscore.txt`);
-    const data = await res.json();
-    fileSHA = data.sha;
-    worldRecord = parseInt(atob(data.content));
-    document.getElementById('high-score').innerText = worldRecord;
+    try {
+        const res = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`);
+        const data = await res.json();
+        fileSHA = data.sha;
+        worldRecord = parseInt(atob(data.content)) || 0;
+        document.getElementById('high-score').innerText = worldRecord;
+        startSystem();
+    } catch (e) {
+        document.getElementById('high-score').innerText = "ERROR";
+        startSystem(); 
+    }
 }
 
-// Update highscore.txt if beaten
-async function updateGlobalScore(score) {
+// Push New Record to GitHub
+async function updateWorldRecord(score) {
     if (score <= worldRecord) return;
-    await fetch(`https://api.github.com/repos/${REPO}/contents/highscore.txt`, {
+    
+    await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
         method: "PUT",
         headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" },
         body: JSON.stringify({
-            message: "NEW_WORLD_RECORD",
+            message: "NEW_GLOBAL_RECORD",
             content: btoa(score.toString()),
             sha: fileSHA
         })
@@ -32,8 +43,9 @@ async function updateGlobalScore(score) {
 }
 
 function generateMath() {
-    // 7th Grade: Integers and Two-Step Equations
-    let x = Math.floor(Math.random() * 10) + 1;
+    // 7th Grade Core: 2-step algebraic equations
+    // Form: ax + b = c
+    let x = Math.floor(Math.random() * 12) + 1;
     let a = Math.floor(Math.random() * 5) + 2;
     let b = Math.floor(Math.random() * 10) + 1;
     target = x;
@@ -41,36 +53,40 @@ function generateMath() {
 }
 
 input.addEventListener('input', (e) => {
+    if (!gameActive) return;
     if (parseInt(e.target.value) === target) {
         combo++;
         document.getElementById('combo-count').innerText = combo;
         timeLeft = Math.min(100, timeLeft + 10);
+        
+        document.getElementById('game-ui').classList.add('shake');
+        setTimeout(() => document.getElementById('game-ui').classList.remove('shake'), 100);
+        
         e.target.value = "";
         generateMath();
     }
 });
 
-function resetGame() {
-    location.reload(); // Simplest way to restart the API sync
+function startSystem() {
+    gameActive = true;
+    generateMath();
+    updateLoop();
 }
 
-function loop() {
+function updateLoop() {
     if (gameActive) {
-        timeLeft -= (0.15 + (combo * 0.015));
-        document.getElementById('timer-bar').style.width = timeLeft + "%";
+        timeLeft -= (0.2 + (combo * 0.015));
+        timerBar.style.width = timeLeft + "%";
+        
         if (timeLeft <= 0) {
             gameActive = false;
             document.getElementById('final-score').innerText = combo;
             document.getElementById('game-over').style.display = "flex";
-            updateGlobalScore(combo);
+            updateWorldRecord(combo);
         }
     }
-    requestAnimationFrame(loop);
+    requestAnimationFrame(updateLoop);
 }
 
-// Start sequence
-setTimeout(() => {
-    syncGlobalScore();
-    generateMath();
-    loop();
-}, 1000); // 1-second delay to show the '---'
+// Initial Boot Sequence (Show '---' for 1.5s)
+setTimeout(syncGlobalScore, 1500);
