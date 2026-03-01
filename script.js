@@ -28,19 +28,48 @@ async function syncGlobalScore() {
     }
 }
 
-// Push New Record to GitHub
+
 async function updateWorldRecord(score) {
-    if (score > worldRecord) return;
-    
-    await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
-        method: "PUT",
-        headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-            message: "NEW_GLOBAL_RECORD",
-            content: btoa(score.toString()),
-            sha: fileSHA
-        })
-    });
+    if (score <= worldRecord) {
+        console.log("Score not high enough to beat World Record.");
+        return;
+    }
+
+    console.log("New Record detected! Syncing with GitHub...");
+
+    try {
+        // 1. MUST GET THE LATEST SHA EVERY TIME BEFORE PUTTING
+        const getRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
+            headers: { "Authorization": `token ${GITHUB_TOKEN}` }
+        });
+        const getData = await getRes.json();
+        const currentSHA = getData.sha; 
+
+        // 2. NOW SEND THE UPDATE WITH THE FRESH SHA
+        const putRes = await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
+            method: "PUT",
+            headers: { 
+                "Authorization": `token ${GITHUB_TOKEN}`,
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify({
+                message: `🏆 NEW WORLD RECORD: ${score}`,
+                content: btoa(score.toString()), // Content MUST be Base64
+                sha: currentSHA // The "Key" that allows the edit
+            })
+        });
+
+        if (putRes.ok) {
+            console.log("✅ GLOBAL RECORD UPDATED ON GITHUB!");
+            worldRecord = score;
+            document.getElementById('high-score').innerText = score;
+        } else {
+            const error = await putRes.json();
+            console.error("❌ UPDATE FAILED:", error.message);
+        }
+    } catch (err) {
+        console.error("❌ CONNECTION ERROR:", err);
+    }
 }
 
 function generateMath() {
