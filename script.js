@@ -1,69 +1,60 @@
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const input = document.getElementById('ans');
-const timerBar = document.getElementById('timer-bar');
-const gameOverScreen = document.getElementById('game-over');
-const gameUI = document.getElementById('game-ui');
-const retryBtn = document.getElementById('retry-btn');
+const GITHUB_TOKEN = "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"; // Be careful with this!
+const REPO_OWNER = "dakshithu";
+const REPO_NAME = "math-thing";
+const FILE_PATH = "highscore.txt";
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+let worldHighScore = 0;
+let fileSHA = "";
 
-let target, combo = 0, timeLeft = 100, particles = [], gameActive = true;
-let highScore = localStorage.getItem('neon_strike_pb') || 0;
-
-document.getElementById('high-score').innerText = highScore;
-
-function generate() {
-    let x = Math.floor(Math.random() * 10) + 1;
-    let a = Math.floor(Math.random() * 5) + 2;
-    let b = Math.floor(Math.random() * 10) + 1;
-    target = x;
-    document.getElementById('eqn').innerText = `${a}x + ${b} = ${a*x + b}`;
+// 1. FETCH THE WORLD SCORE ON LOAD
+async function fetchWorldScore() {
+    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        fileSHA = data.sha; // Save this, we need it to update the file
+        worldHighScore = parseInt(atob(data.content)); // Decode Base64 from GitHub
+        document.getElementById('high-score').innerText = worldHighScore;
+    } catch (err) {
+        console.error("Error fetching world score:", err);
+    }
 }
 
-input.addEventListener('input', (e) => {
-    if (!gameActive) return;
-    if (parseInt(e.target.value) === target) {
-        combo++;
-        document.getElementById('combo-count').innerText = combo;
-        timeLeft = Math.min(100, timeLeft + 10);
-        gameUI.classList.add('shake');
-        setTimeout(() => gameUI.classList.remove('shake'), 100);
-        e.target.value = "";
-        generate();
-    }
-});
+// 2. UPDATE THE WORLD SCORE IF BEATEN
+async function updateWorldScore(newScore) {
+    if (newScore <= worldHighScore) return;
 
-retryBtn.addEventListener('click', () => {
-    combo = 0; timeLeft = 100; gameActive = true;
-    document.getElementById('combo-count').innerText = 0;
-    gameOverScreen.style.display = 'none';
-    gameUI.style.display = 'block';
-    input.value = ""; input.focus();
-    generate();
-});
+    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
+    const body = {
+        message: `New World Record: ${newScore}`,
+        content: btoa(newScore.toString()), // Encode to Base64
+        sha: fileSHA
+    };
 
-function update() {
-    if (gameActive) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        timeLeft -= (0.2 + (combo * 0.02));
-        timerBar.style.width = timeLeft + "%";
-        
-        if (timeLeft <= 0) {
-            gameActive = false;
-            if (combo > highScore) {
-                highScore = combo;
-                localStorage.setItem('neon_strike_pb', highScore);
-                document.getElementById('high-score').innerText = highScore;
-            }
-            document.getElementById('final-score').innerText = combo;
-            gameUI.style.display = 'none';
-            gameOverScreen.style.display = 'flex';
+    try {
+        const response = await fetch(url, {
+            method: "PUT",
+            headers: {
+                "Authorization": `token ${GITHUB_TOKEN}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
+        if (response.ok) {
+            console.log("World Record Updated!");
+            worldHighScore = newScore;
         }
+    } catch (err) {
+        console.error("Update failed:", err);
     }
-    requestAnimationFrame(update);
 }
 
-generate();
-update();
+// INTEGRATE INTO YOUR GAME OVER LOGIC
+// Inside your update() function where timeLeft <= 0:
+if (timeLeft <= 0) {
+    gameActive = false;
+    updateWorldScore(combo); // Trigger the API check
+    // ... rest of your game over code
+}
+
+fetchWorldScore(); // Run on startup
