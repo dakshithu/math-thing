@@ -29,7 +29,7 @@ async function syncGlobalScore() {
 
 // Push New Record to GitHub
 async function updateWorldRecord(score) {
-    if (score > worldRecord) return;
+    if (score <= worldRecord) return;
     
     await fetch(`https://api.github.com/repos/${REPO}/contents/${FILE}`, {
         method: "PUT",
@@ -90,3 +90,4 @@ function updateLoop() {
 
 // Initial Boot Sequence (Show '---' for 1.5s)
 setTimeout(syncGlobalScore, 1500);
+
