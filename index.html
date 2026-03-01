@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEON STRIKE: WORLD ELITE</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="timer-container"><div id="timer-bar"></div></div>
+
+    <div id="game-ui">
+        <div id="eqn">---</div>
+        <input type="number" id="ans" autofocus autocomplete="off">
+    </div>
+
+    <div id="stats">
+        <div>COMBO: <span id="combo-count">0</span></div>
+        <div>YOUR BEST: <span id="high-score">0</span></div>
+    </div>
+
+    <div id="game-over">
+        <h1>SYSTEM_CRASH</h1>
+        <p>FINAL SCORE: <span id="final-score">0</span></p>
+        <button id="retry-btn">REBOOT_SYSTEM</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    <script src="script.js"></script>
+</body>
+</html>

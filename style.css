@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap');
+
+body { 
+    background: #000; color: #fff; font-family: 'Orbitron', sans-serif; 
+    margin: 0; overflow: hidden; display: flex; flex-direction: column; 
+    align-items: center; justify-content: center; height: 100vh;
+}
+
+#game-ui { text-align: center; z-index: 10; }
+
+#eqn { 
+    font-size: clamp(60px, 10vw, 120px); 
+    text-shadow: 0 0 20px #00ffcc, 0 0 40px #00ffcc;
+    margin-bottom: 30px;
+}
+
+input { 
+    background: #111; border: 4px solid #ff0055;
+    color: #ff0055; font-size: 60px; width: 280px; text-align: center; 
+    outline: none; font-family: 'Orbitron', sans-serif;
+    box-shadow: 0 0 15px #ff0055; border-radius: 10px;
+}
+
+#timer-container { position: fixed; top: 0; left: 0; width: 100%; height: 25px; background: #222; }
+#timer-bar { height: 100%; background: #ff0055; width: 100%; box-shadow: 0 0 20px #ff0055; }
+
+#stats { position: fixed; bottom: 20px; width: 100%; display: flex; justify-content: space-around; font-size: 18px; color: #00ffcc; }
+
+#game-over {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 0, 85, 0.98); flex-direction: column;
+    align-items: center; justify-content: center; z-index: 100;
+}
+
+#retry-btn { 
+    background: #000; color: #fff; border: none; padding: 20px 50px; 
+    font-family: 'Orbitron', sans-serif; font-size: 30px; cursor: pointer;
+    margin-top: 30px;
+}
+
+#canvas { position: fixed; top: 0; left: 0; pointer-events: none; z-index: 1; }
+
+.shake { animation: shake 0.1s linear infinite; }
+@keyframes shake { 0% { transform: translate(3px, 3px); } 50% { transform: translate(-3px, -3px); } }
