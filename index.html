@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEON STRIKE: WORLD ELITE</title>
+    <title>NEON_STRIKE // WORLD_ELITE</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,15 +14,15 @@
         <input type="number" id="ans" autofocus autocomplete="off">
     </div>
 
-    <div id="stats">
-        <div>COMBO: <span id="combo-count">0</span></div>
-        <div>YOUR BEST: <span id="high-score">0</span></div>
+    <div id="stats-bar">
+        <div class="stat-box">CURRENT_STREAK: <span id="combo-count" class="highlight">0</span></div>
+        <div class="stat-box">WORLD_RECORD: <span id="high-score" class="highlight">SYNCING...</span></div>
     </div>
 
     <div id="game-over">
         <h1>SYSTEM_CRASH</h1>
-        <p>FINAL SCORE: <span id="final-score">0</span></p>
-        <button id="retry-btn">REBOOT_SYSTEM</button>
+        <p>STREAK_ENDED: <span id="final-score" class="highlight">0</span></p>
+        <button id="retry-btn" onclick="location.reload()">REBOOT_SYSTEM</button>
     </div>
 
     <canvas id="canvas"></canvas>
