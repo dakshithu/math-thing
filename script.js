@@ -1,60 +1,76 @@
 const GITHUB_TOKEN = "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"; // Be careful with this!
 const REPO_OWNER = "dakshithu";
 const REPO_NAME = "math-thing";
-const FILE_PATH = "highscore.txt";
+const REPO = `${REPO_OWNER}/${REPO_NAME}`;
+const input = document.getElementById('ans');
+const eqnDisplay = document.getElementById('eqn');
 
-let worldHighScore = 0;
-let fileSHA = "";
+let target, combo = 0, timeLeft = 100, gameActive = true;
+let worldRecord = 0, fileSHA = "";
 
-// 1. FETCH THE WORLD SCORE ON LOAD
-async function fetchWorldScore() {
-    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        fileSHA = data.sha; // Save this, we need it to update the file
-        worldHighScore = parseInt(atob(data.content)); // Decode Base64 from GitHub
-        document.getElementById('high-score').innerText = worldHighScore;
-    } catch (err) {
-        console.error("Error fetching world score:", err);
-    }
+// Fetch Global Score from highscore.txt via GitHub API
+async function syncGlobalScore() {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/contents/highscore.txt`);
+    const data = await res.json();
+    fileSHA = data.sha;
+    worldRecord = parseInt(atob(data.content));
+    document.getElementById('high-score').innerText = worldRecord;
 }
 
-// 2. UPDATE THE WORLD SCORE IF BEATEN
-async function updateWorldScore(newScore) {
-    if (newScore <= worldHighScore) return;
+// Update highscore.txt if beaten
+async function updateGlobalScore(score) {
+    if (score <= worldRecord) return;
+    await fetch(`https://api.github.com/repos/${REPO}/contents/highscore.txt`, {
+        method: "PUT",
+        headers: { "Authorization": `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+            message: "NEW_WORLD_RECORD",
+            content: btoa(score.toString()),
+            sha: fileSHA
+        })
+    });
+}
 
-    const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${FILE_PATH}`;
-    const body = {
-        message: `New World Record: ${newScore}`,
-        content: btoa(newScore.toString()), // Encode to Base64
-        sha: fileSHA
-    };
+function generateMath() {
+    // 7th Grade: Integers and Two-Step Equations
+    let x = Math.floor(Math.random() * 10) + 1;
+    let a = Math.floor(Math.random() * 5) + 2;
+    let b = Math.floor(Math.random() * 10) + 1;
+    target = x;
+    eqnDisplay.innerText = `${a}x + ${b} = ${a*x + b}`;
+}
 
-    try {
-        const response = await fetch(url, {
-            method: "PUT",
-            headers: {
-                "Authorization": `token ${GITHUB_TOKEN}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
-        if (response.ok) {
-            console.log("World Record Updated!");
-            worldHighScore = newScore;
+input.addEventListener('input', (e) => {
+    if (parseInt(e.target.value) === target) {
+        combo++;
+        document.getElementById('combo-count').innerText = combo;
+        timeLeft = Math.min(100, timeLeft + 10);
+        e.target.value = "";
+        generateMath();
+    }
+});
+
+function resetGame() {
+    location.reload(); // Simplest way to restart the API sync
+}
+
+function loop() {
+    if (gameActive) {
+        timeLeft -= (0.15 + (combo * 0.015));
+        document.getElementById('timer-bar').style.width = timeLeft + "%";
+        if (timeLeft <= 0) {
+            gameActive = false;
+            document.getElementById('final-score').innerText = combo;
+            document.getElementById('game-over').style.display = "flex";
+            updateGlobalScore(combo);
         }
-    } catch (err) {
-        console.error("Update failed:", err);
     }
+    requestAnimationFrame(loop);
 }
 
-// INTEGRATE INTO YOUR GAME OVER LOGIC
-// Inside your update() function where timeLeft <= 0:
-if (timeLeft <= 0) {
-    gameActive = false;
-    updateWorldScore(combo); // Trigger the API check
-    // ... rest of your game over code
-}
-
-fetchWorldScore(); // Run on startup
+// Start sequence
+setTimeout(() => {
+    syncGlobalScore();
+    generateMath();
+    loop();
+}, 1000); // 1-second delay to show the '---'
